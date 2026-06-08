@@ -3,6 +3,7 @@ package com.example.borad.controller;
 import com.example.borad.entity.Board;
 import com.example.borad.repository.BoardRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -12,9 +13,16 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 
 @Controller
 @RequiredArgsConstructor
@@ -22,13 +30,34 @@ public class BoardController {
 
     private final BoardRepository boardRepository;
 
+    @Value("${file.upload.path}")
+    private String uploadPath;
+
+    private static final List<String> ALLOWED_EXT = List.of("jpg", "jpeg", "png", "gif");
+
     @GetMapping("/board")
-    public String list(Model model, @RequestParam(defaultValue = "0") int page) {
+    public String list(Model model,
+                       @RequestParam(defaultValue = "0") int page,
+                       @RequestParam(defaultValue = "") String keyword,
+                       @RequestParam(defaultValue = "all") String searchType) {
         PageRequest pageable = PageRequest.of(page, 10, Sort.by("id").descending());
-        Page<Board> boardList = boardRepository.findAll(pageable);
+        Page<Board> boardList;
+
+        if (keyword.isBlank()) {
+            boardList = boardRepository.findAll(pageable);
+        } else {
+            boardList = switch (searchType) {
+                case "title"  -> boardRepository.findByTitleContainingIgnoreCase(keyword, pageable);
+                case "writer" -> boardRepository.findByWriterContainingIgnoreCase(keyword, pageable);
+                default       -> boardRepository.findByTitleContainingIgnoreCaseOrWriterContainingIgnoreCase(keyword, keyword, pageable);
+            };
+        }
+
         model.addAttribute("boardList", boardList);
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", boardList.getTotalPages());
+        model.addAttribute("keyword", keyword);
+        model.addAttribute("searchType", searchType);
         return "board/list";
     }
 
@@ -38,7 +67,14 @@ public class BoardController {
     }
 
     @PostMapping("/board/write")
-    public String write(Board board) {
+    public String write(Board board,
+                        @RequestParam(value = "file", required = false) MultipartFile file) throws IOException {
+        if (file != null && !file.isEmpty()) {
+            String savedName = saveFile(file);
+            if (savedName == null) return "redirect:/board/write?error=invalidType";
+            board.setFileName(file.getOriginalFilename());
+            board.setFilePath("/uploads/" + savedName);
+        }
         board.setCreatedAt(LocalDateTime.now());
         boardRepository.save(board);
         return "redirect:/board";
@@ -59,11 +95,19 @@ public class BoardController {
     }
 
     @PostMapping("/board/edit/{id}")
-    public String edit(@PathVariable Long id, Board board) {
+    public String edit(@PathVariable Long id, Board board,
+                       @RequestParam(value = "file", required = false) MultipartFile file) throws IOException {
         Board existingBoard = boardRepository.findById(id).orElseThrow(() -> new RuntimeException("게시글을 찾을 수 없습니다"));
         existingBoard.setTitle(board.getTitle());
         existingBoard.setWriter(board.getWriter());
         existingBoard.setContent(board.getContent());
+        if (file != null && !file.isEmpty()) {
+            String savedName = saveFile(file);
+            if (savedName != null) {
+                existingBoard.setFileName(file.getOriginalFilename());
+                existingBoard.setFilePath("/uploads/" + savedName);
+            }
+        }
         boardRepository.save(existingBoard);
         return "redirect:/board/" + id;
     }
@@ -72,5 +116,16 @@ public class BoardController {
     public String delete(@PathVariable Long id) {
         boardRepository.deleteById(id);
         return "redirect:/board";
+    }
+
+    private String saveFile(MultipartFile file) throws IOException {
+        String original = Objects.requireNonNull(file.getOriginalFilename());
+        String ext = original.substring(original.lastIndexOf('.') + 1).toLowerCase();
+        if (!ALLOWED_EXT.contains(ext)) return null;
+        String saved = UUID.randomUUID() + "_" + original;
+        Path path = Paths.get(uploadPath + saved);
+        Files.createDirectories(path.getParent());
+        file.transferTo(path.toFile());
+        return saved;
     }
 }
