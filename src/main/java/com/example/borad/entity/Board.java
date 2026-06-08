@@ -24,4 +24,8 @@ public class Board {
 
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
+
+    private String fileName;
+
+    private String filePath;
 }

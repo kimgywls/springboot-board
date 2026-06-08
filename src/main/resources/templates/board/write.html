@@ -7,7 +7,12 @@
 </head>
 <body class="container mt-4">
 <h1 class="mb-3">글쓰기</h1>
-<form th:action="@{/board/write}" method="post">
+
+<div th:if="${param.error}" class="alert alert-danger">
+    허용되지 않는 파일 형식입니다. (jpg, png, gif만 가능)
+</div>
+
+<form th:action="@{/board/write}" method="post" enctype="multipart/form-data">
     <div class="mb-3">
         <label class="form-label">제목</label>
         <input type="text" name="title" class="form-control">
@@ -19,6 +24,10 @@
     <div class="mb-3">
         <label class="form-label">내용</label>
         <textarea name="content" class="form-control" rows="5"></textarea>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">이미지 첨부 (jpg, png, gif)</label>
+        <input type="file" name="file" class="form-control" accept=".jpg,.jpeg,.png,.gif">
     </div>
     <button type="submit" class="btn btn-primary">저장</button>
     <a href="/board" class="btn btn-outline-secondary">목록으로</a>
