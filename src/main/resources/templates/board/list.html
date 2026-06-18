@@ -41,17 +41,19 @@
         <th>제목</th>
         <th>작성자</th>
         <th>작성일</th>
+        <th>조회수</th>
     </tr>
     </thead>
     <tbody>
     <tr th:if="${boardList.isEmpty()}">
-        <td colspan="4" class="text-center text-muted">검색 결과가 없습니다.</td>
+        <td colspan="5" class="text-center text-muted">검색 결과가 없습니다.</td>
     </tr>
     <tr th:each="board : ${boardList}">
         <td th:text="${board.id}"></td>
         <td><a th:href="@{/board/{id}(id=${board.id})}" th:text="${board.title}"></a></td>
         <td th:text="${board.writer}"></td>
         <td th:text="${#temporals.format(board.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
+        <td th:text="${board.viewCount}"></td>
     </tr>
     </tbody>
 </table>

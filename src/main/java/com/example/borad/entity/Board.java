@@ -28,4 +28,6 @@ public class Board {
     private String fileName;
 
     private String filePath;
+
+    private int viewCount;
 }

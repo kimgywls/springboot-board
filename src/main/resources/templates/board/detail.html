@@ -30,6 +30,10 @@
         <td th:text="${#temporals.format(board.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
     </tr>
     <tr>
+        <th class="table-dark">조회수</th>
+        <td th:text="${board.viewCount}"></td>
+    </tr>
+    <tr>
         <th class="table-dark">내용</th>
         <td th:text="${board.content}"></td>
     </tr>

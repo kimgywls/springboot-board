@@ -2,6 +2,7 @@ package com.example.borad.controller;
 
 import com.example.borad.entity.Board;
 import com.example.borad.repository.BoardRepository;
+import com.example.borad.service.BoardService;
 import com.example.borad.service.CommentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,6 +33,7 @@ import java.util.UUID;
 public class BoardController {
 
     private final BoardRepository boardRepository;
+    private final BoardService boardService;
     private final CommentService commentService;
 
     @Value("${file.upload.path}")
@@ -86,7 +88,7 @@ public class BoardController {
 
     @GetMapping("/board/{id}")
     public String detail(@PathVariable Long id, Model model) {
-        Board board = boardRepository.findById(id).orElseThrow(() -> new RuntimeException("게시글을 찾을 수 없습니다"));
+        Board board = boardService.increaseViewCount(id);
         model.addAttribute("board", board);
         model.addAttribute("comments", commentService.findByBoardId(id));
         return "board/detail";
