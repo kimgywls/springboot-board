@@ -2,11 +2,14 @@ package com.example.borad.controller;
 
 import com.example.borad.entity.Board;
 import com.example.borad.repository.BoardRepository;
+import com.example.borad.service.CommentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,6 +32,7 @@ import java.util.UUID;
 public class BoardController {
 
     private final BoardRepository boardRepository;
+    private final CommentService commentService;
 
     @Value("${file.upload.path}")
     private String uploadPath;
@@ -84,20 +88,29 @@ public class BoardController {
     public String detail(@PathVariable Long id, Model model) {
         Board board = boardRepository.findById(id).orElseThrow(() -> new RuntimeException("게시글을 찾을 수 없습니다"));
         model.addAttribute("board", board);
+        model.addAttribute("comments", commentService.findByBoardId(id));
         return "board/detail";
     }
 
     @GetMapping("/board/edit/{id}")
-    public String editForm(@PathVariable Long id, Model model) {
+    public String editForm(@PathVariable Long id, Model model,
+                           @AuthenticationPrincipal UserDetails userDetails) {
         Board board = boardRepository.findById(id).orElseThrow(() -> new RuntimeException("게시글을 찾을 수 없습니다"));
+        if (!board.getWriter().equals(userDetails.getUsername())) {
+            return "redirect:/board/" + id + "?error=forbidden";
+        }
         model.addAttribute("board", board);
         return "board/edit";
     }
 
     @PostMapping("/board/edit/{id}")
     public String edit(@PathVariable Long id, Board board,
-                       @RequestParam(value = "file", required = false) MultipartFile file) throws IOException {
+                       @RequestParam(value = "file", required = false) MultipartFile file,
+                       @AuthenticationPrincipal UserDetails userDetails) throws IOException {
         Board existingBoard = boardRepository.findById(id).orElseThrow(() -> new RuntimeException("게시글을 찾을 수 없습니다"));
+        if (!existingBoard.getWriter().equals(userDetails.getUsername())) {
+            return "redirect:/board/" + id + "?error=forbidden";
+        }
         existingBoard.setTitle(board.getTitle());
         existingBoard.setWriter(board.getWriter());
         existingBoard.setContent(board.getContent());
@@ -113,7 +126,12 @@ public class BoardController {
     }
 
     @GetMapping("/board/delete/{id}")
-    public String delete(@PathVariable Long id) {
+    public String delete(@PathVariable Long id,
+                         @AuthenticationPrincipal UserDetails userDetails) {
+        Board board = boardRepository.findById(id).orElseThrow(() -> new RuntimeException("게시글을 찾을 수 없습니다"));
+        if (!board.getWriter().equals(userDetails.getUsername())) {
+            return "redirect:/board/" + id + "?error=forbidden";
+        }
         boardRepository.deleteById(id);
         return "redirect:/board";
     }

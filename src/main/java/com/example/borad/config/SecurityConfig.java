@@ -20,7 +20,7 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/board/write", "/board/edit/**", "/board/delete/**").authenticated()
+                .requestMatchers("/board/write", "/board/edit/**", "/board/delete/**", "/comment/write", "/comment/update/**", "/comment/delete/**").authenticated()
                 .anyRequest().permitAll()
             )
             .formLogin(form -> form
