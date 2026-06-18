@@ -90,10 +90,9 @@
 
         <dependency>
             <groupId>com.oracle.database.jdbc</groupId>
-            <artifactId>ojdbc17</artifactId>
-            <version>1.0</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/libs/ojdbc17.jar</systemPath>
+            <artifactId>ojdbc11</artifactId>
+            <version>21.9.0.0</version>
+            <scope>runtime</scope>
         </dependency>
     </dependencies>
 
