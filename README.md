@@ -68,7 +68,7 @@ docker-compose up --build
 
 ```bash
 # Oracle DB 실행
-docker run -d --name oracle -p 1521:1521 -e ORACLE_PASSWORD=1234 gvenzl/oracle-xe
+docker run -d --name oracle -p 1521:1521 -e ORACLE_PASSWORD=your_password gvenzl/oracle-xe
 
 # Spring Boot 실행 (application.properties 기본값 사용)
 ./mvnw spring-boot:run
